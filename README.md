@@ -8,7 +8,25 @@ Personalized Matrix Generation: Create custom matrices tailored to your specific
 Differential Transcript Usage (DTU) Analysis: Identify variations in transcript usage across different cell populations.
 Differential Promoter Usage (PSI) Analysis: Detect differences in promoter usage events within your single-cell data.
 RNA Binding Protein (RBP) Analysis: Analyze the binding patterns of RNA binding proteins to understand their role in gene regulation.
-...
+
+
+## Getting Started
+
+### Prerequisites
+
+Before you begin, ensure you have met the following requirements:
+- Python 3.8 or higher
+- A compatible operating system (e.g., Windows, macOS, Linux)
+
+### Installation
+
+To install the software, follow these steps:
+
+```
+pip install scCyclone
+```
+
+
 
 ## License
 scCyclone is released under the MIT License.
