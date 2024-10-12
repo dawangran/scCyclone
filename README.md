@@ -20,7 +20,7 @@ scCyclone is a comprehensive Python package designed to analyze single-cell full
 
 * **Modal Analysis of Splicing Events**: This feature involves examining the distribution of splicing events to identify common patterns or central tendencies. This can provide insights into the most frequent or significant splicing patterns within the dataset.
 
-* **RNA Binding Protein (RBP) Analysis with rMAPS Output**: This feature allows for the analysis of RNA binding protein (RBP) binding patterns and provides output files compatible with rMAPS, a popular tool for differential splicing analysis. This can help researchers understand the role of RBPs in regulating gene expression and splicing events.
+* **RNA Binding Protein (RBP) Analysis with rMAPS Output**: This feature allows for the analysis of RNA binding protein (RBP) binding patterns and provides output files compatible with rMAPS（http://rmaps.cecsresearch.org/）, a popular tool for differential splicing analysis. This can help researchers understand the role of RBPs in regulating gene expression and splicing events.
 
 
 
