@@ -16,7 +16,7 @@ release = '1.0.0'
 
 extensions = ['recommonmark','sphinx_markdown_tables'] 
 
-templates_path = ['docs/source/_templates']
+templates_path = ['source/_templates']
 exclude_patterns = []
 
 
@@ -24,7 +24,7 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_static_path = ['docs/source/_static']
+html_static_path = ['source/_static']
 
 
 import sphinx_rtd_theme
