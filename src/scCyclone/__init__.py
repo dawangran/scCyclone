@@ -60,6 +60,7 @@ __all__ = [
     "logging",
     "metrics",
     "queries",
+    "settings",
     "pl",
     "pp",
     "tl",
@@ -84,6 +85,8 @@ __all__ = [
 
 name = "scCyclone"
 __version__ = "1.0.1"
+
+
 # scCyclone_logo="""
 #      _______.  ______   ______ ____    ____  ______  __        ______   .__   __.  _______ 
 #     /       | /      | /      |\   \  /   / /      ||  |      /  __  \  |  \ |  | |   ____|

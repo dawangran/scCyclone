@@ -13,9 +13,60 @@ import pandas as pd
 import anndata as ad
 from joblib import Parallel, delayed
 from typing import Union
-
+import scanpy as sc
 
 from . import _utils
+
+import anndata as ad
+import scanpy as sc
+
+def _filter_event(
+    adata: ad.AnnData,
+    groupby: str,
+    groups: list,
+    percent: float,
+):
+    """
+    Filters genes for each group in the AnnData object based on the percentage of cells expressing them.
+
+    Parameters:
+    - adata: AnnData object containing the data.
+    - groupby: The column name in `adata.obs` to group the data by.
+    - groups: A list of group identifiers to filter.
+    - percent: The minimum percentage of cells in which a event must be expressed to be kept (default is 0.1).
+
+    Returns:
+    - The filtered AnnData object.
+    """
+
+    # Add 1 to all values in the data matrix to avoid filtering out genes that are exactly at the threshold
+    adata.X = adata.X + 1
+
+    # Initialize an empty list to store the names of genes that pass the filter
+    event_list = []
+
+    # Iterate over each group
+    for group in groups:
+        # Select the subset of the AnnData object that corresponds to the current group
+        sub_adata = adata[adata.obs[groupby] == group]
+
+        # Filter genes in the subset, keeping only those that are expressed in at least 'percent' of cells
+        sc.pp.filter_genes(sub_adata, min_cells=int(sub_adata.shape[0] * percent))
+
+        # Add the names of the filtered genes to the event list
+        event_list.extend(sub_adata.var_names.tolist())
+
+    # Remove duplicates from the event list by converting it to a set and back to a list
+    event_list = list(set(event_list))
+
+    # Select only the filtered genes from the original AnnData object
+    adata = adata[:, event_list]
+
+    # Subtract 1 from all values in the data matrix to restore the original data
+    adata.X = adata.X - 1
+
+    # Return the filtered AnnData object
+    return adata
      
 
 def _compute_dpsi(e, data_a, data_b):
@@ -97,7 +148,8 @@ def rank_psis_groups(
     groupby: str,
     groups: Union[str, list]="all",
     reference: str = "rest",
-    key_added: Union[str, None] = None):
+    key_added: Union[str, None] = None,
+    percent: float = 0.1):
     """
     Rank psi for characterizing groups.
 
@@ -115,6 +167,7 @@ def rank_psis_groups(
         If 'rest', compare each group to the union of the rest of the group. If a group identifier, compare with respect to this group.
     key_added
         The key in adata.uns information is saved to.
+    percent: The minimum percentage of cells in which a event must be expressed to be kept (default is 0.1).
 
     Returns
     -------
@@ -123,9 +176,9 @@ def rank_psis_groups(
     """
 
     groups_order = _utils.check_groups(adata,groupby,groups,reference)
-    print(groups_order)
-
-
+    
+    adata=_filter_event(adata,groupby=groupby,groups=groups_order,percent=percent)
+    
     # Initialize adata.uns[key_added]
     
     if key_added is None:
