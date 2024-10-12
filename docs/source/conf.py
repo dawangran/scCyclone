@@ -6,12 +6,6 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-
-import sphinx_rtd_theme
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
-
 project = 'scCyclone'
 copyright = '2024, Dawn'
 author = 'Dawn'
@@ -21,7 +15,6 @@ release = '1.0.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = ['recommonmark','sphinx_markdown_tables'] 
-
 
 templates_path = ['_templates']
 exclude_patterns = []
@@ -35,5 +28,8 @@ html_theme = 'alabaster'
 html_static_path = ['_static']
 
 
+import sphinx_rtd_theme
+html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 
