@@ -5,7 +5,6 @@ LICENSE
 README.md
 project.toml
 setup.py
-dist/sccyclone-1.0.0.tar.gz
 docs/Makefile
 docs/make.bat
 docs/requirements.txt
