@@ -8,11 +8,7 @@ build:
 sphinx:
   fail_on_warning: true # do not change or you will be fired
   configuration: docs/source/conf.py
+
 python:
   install:
-  - method: pip
-    path: .
-    extra_requirements:
-    - sphinx-markdown-tables
-    - sphinx_rtd_theme
-    - doc
+    - requirements: docs/requirements.txt
