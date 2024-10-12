@@ -1,4 +1,6 @@
 [![PyPI](https://img.shields.io/pypi/v/scCyclone?logo=PyPI)](https://pypi.org/project/scCyclone)
+[![Documentation Status](https://readthedocs.org/projects/sccyclone/badge/?version=latest)](https://sccyclone.readthedocs.io/en/latest/?badge=latest)
+
 
 
 # scCyclone: Single-Cell Cyclone Analysis in Python
@@ -44,7 +46,8 @@ To install the software, follow these steps:
 pip install scCyclone
 ```
 
-
+### Documentation
+Read the documentation : https://sccyclone.readthedocs.io
 
 ## License
 scCyclone is released under the MIT License.
