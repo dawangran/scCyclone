@@ -13,6 +13,6 @@ python:
   - method: pip
     path: .
     extra_requirements:
+    - sphinx-markdown-tables
+    - sphinx_rtd_theme
     - doc
-    - scanpy
-    - dotplot
