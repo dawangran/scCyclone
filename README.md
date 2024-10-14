@@ -52,5 +52,3 @@ Read the documentation : https://sccyclone.readthedocs.io
 ## License
 scCyclone is released under the MIT License.
 
-## Contact
-For any questions or feedback, please reach out to us at 605547565@qq.com.
