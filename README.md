@@ -34,7 +34,7 @@ Before you begin, ensure you have met the following requirements:
 - Python 3.8 or higher
 - A compatible operating system (e.g., Windows, macOS, Linux)
 
-* [scanpy](https://pythonhosted.org/gffutils/installation.html)
+* [scanpy](https://github.com/scverse/scanpy)
 * [dotplot](https://github.com/kn-bibs/dotplot)
 
 
