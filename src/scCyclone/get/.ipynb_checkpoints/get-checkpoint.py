@@ -30,7 +30,7 @@ def rank_ifs_groups_df(
     max_dif: float = 1,
     rank_state: Union[None, str] = None,
     first: bool = False,
-    dpr_cutoff: float = 0.3,
+    dpr_cutoff: Union[None, float] = None,
     compare_abs: bool = False
     ):
     """
@@ -59,11 +59,7 @@ def rank_ifs_groups_df(
     if not (0 <= min_dif <= 1):
         raise ValueError("min_dif must be between 0 and 1.")
     if not (0 <= max_dif <= 1):
-        raise ValueError("max_dif must be between 0 and 1.")
-    if not (0 <= dpr_cutoff <= 1):
-        raise ValueError("max_dif must be between 0 and 1.")
-    
-
+        raise ValueError("max_dif must be between 0 and 1.")    
 
     if rank_state not in ["up", "down", "normal", None]:
         raise ValueError("Invalid rank_state value. Please provide 'up', 'down', 'normal', or None.")
@@ -87,9 +83,11 @@ def rank_ifs_groups_df(
 
     if pval_cutoff is not None:
         d = d[d["pvals_adj"] <= pval_cutoff]
-        
+
     if dpr_cutoff is not None:
-        d = d[d["dpr"] <= dpr_cutoff]
+        if not (0 <= dpr_cutoff <= 1):
+            raise ValueError("dpr_cutoff must be between 0 and 1.")
+        d = d[(abs(d["dpr"]) >= dpr_cutoff if compare_abs==True else d["dpr"] >= dpr_cutoff)]
 
     d = d[(abs(d["dif"]) >= min_dif if compare_abs==True else d["dif"] >= min_dif) & 
           (abs(d["dif"]) <= max_dif if compare_abs==True else d["dif"] <= max_dif)]
@@ -211,14 +209,7 @@ def rank_psis_groups_df(
 
     if gene_symbols is not None:
         d = d.join(adata.var[gene_symbols], on="names")
-
-    # if compare_abs == True:
-    #     d = d[(d["dpsi"] >= min_dpsi) | (d["dpsi"] <= -min_dpsi) & 
-    #           (d["dpsi"] <= max_dpsi) | (d["dpsi"] >= -max_dpsi)]
-    # else:
-    #     d = d[(d["dpsi"] >= min_dpsi) & 
-    #           (d["dpsi"] <= max_dpsi)]
-
+        
     d = d[(abs(d["dpsi"]) >= min_dpsi if compare_abs==True else d["dpsi"] >= min_dpsi) & 
           (abs(d["dpsi"]) <= max_dpsi if compare_abs==True else d["dpsi"] <= max_dpsi)]
 

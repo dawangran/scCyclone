@@ -15,7 +15,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
  
 setuptools.setup(
     name="scCyclone", 
-    version="1.0.1",
+    version="1.0.2",
     author="Dawn",
     author_email="605547565@qq.com",
     description="Single-Cell Cyclone Analysis Package",

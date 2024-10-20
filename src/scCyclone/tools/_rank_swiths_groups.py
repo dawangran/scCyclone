@@ -62,8 +62,8 @@ def rank_switchs_groups(
     group: Union[None, str, list] = None,
     key: str = "rank_ifs_groups",
     key_added: Union[None, str] = None,
-    pval_cutoff: float = 0.05,
-    dpr_cutoff: float = 0.3,
+    pval_cutoff: Union[None, float] = 0.05,
+    dpr_cutoff: Union[None, float] = None,
     abs_min_dif: float = 0,
     abs_max_dif: float = 1,
     rank_state: Union[None, str] = None,
@@ -103,7 +103,7 @@ def rank_switchs_groups(
     
     # Validate min_dif and max_dif values
     if not (0 <= abs_min_dif <= 1) or not (0 <= abs_max_dif <= 1):
-        raise ValueError("min_dif and max_dif must be between 0 and 1.")
+        raise ValueError("abs_min_dif and abs_max_dif must be between 0 and 1.")
     
     # Ensure group is a list
     group = [group] if isinstance(group, str) else group or list(adata.uns[key]["names"].dtype.names)
@@ -150,8 +150,9 @@ def rank_switch_consequences_groups(
     ----------
     
     adata (ad.AnnData): Anndata object containing variable information.
-    switch_data (pd.DataFrame): DataFrame containing switch data.
     var_name_list (list): List of variable names to be considered.
+    key (str): Key for the data.
+    key_added (Union[None, str]): Additional key to be added.
 
     Returns:
     ----------
@@ -191,7 +192,9 @@ def rank_switch_consequences_groups(
 
             _switch_data_summary = _switch_data.groupby('group')[i].value_counts().unstack(fill_value=0)
             _switch_data_summary=_switch_data_summary.rename(columns={"more": "nUP", "less": "nDown"})
-            _switch_data_summary['percentage'] = (_switch_data_summary["nUP"] / (_switch_data_summary['nUP'] + _switch_data_summary['nDown'])) 
+            _switch_data_summary['total'] = _switch_data_summary['nUP'] + _switch_data_summary['nDown']
+            _max_total = _switch_data_summary['total'].max()
+            _switch_data_summary['percentage'] = _switch_data_summary['total'] / _max_total
             _switch_data_summary['log2fc'] = np.log2(_switch_data_summary["nUP"] / _switch_data_summary["nDown"])
             _switch_data_summary['feature'] = i
             switch_data_summary_list.append(_switch_data_summary)
@@ -208,7 +211,9 @@ def rank_switch_consequences_groups(
 
             _switch_data_summary = _switch_data.groupby('group')[i].value_counts().unstack(fill_value=0)
             _switch_data_summary=_switch_data_summary.rename(columns={"more": "nUP", "less": "nDown"})
-            _switch_data_summary['percentage'] = (_switch_data_summary["nUP"] / (_switch_data_summary['nUP'] + _switch_data_summary['nDown'])) 
+            _switch_data_summary['total'] = _switch_data_summary['nUP'] + _switch_data_summary['nDown']
+            _max_total = _switch_data_summary['total'].max()
+            _switch_data_summary['percentage'] = _switch_data_summary['total'] / _max_total 
             _switch_data_summary['log2fc'] = np.log2(_switch_data_summary["nUP"] / _switch_data_summary["nDown"])
             _switch_data_summary['feature'] = i
             switch_data_summary_list.append(_switch_data_summary)

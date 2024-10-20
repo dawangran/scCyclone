@@ -314,9 +314,9 @@ def _compute_rank(
         if target_rank == ref_rank:
             state = "normal"
         elif target_rank > ref_rank:
-            state = "up"
-        else:
             state = "down"
+        else:
+            state = "up"
         dr_state_list.append(state)
 
     # Identify if the target rank is the first rank
@@ -490,7 +490,7 @@ def rank_ifs_groups(
         
         print("Compute dIF...")
         dif_list = _compute_dif(data_ref_IF_matrix, data_target_IF_matrix)
-        dr_list, dr_state_list, dr_first_list = _compute_rank(data_target_rank, data_ref_rank)
+        dr_list, dr_state_list, dr_first_list = _compute_rank(data_ref_rank, data_target_rank)
         
         print("Compute pvalue...")
         pval_list = _compute_pvalue(adata_ref_IF, adata_target_IF)

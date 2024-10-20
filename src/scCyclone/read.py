@@ -44,7 +44,7 @@ def generate_Iso_adata(
   
     # Read isoform count data
     logging.info(f"Reading isoform count data from {data_path}")
-    data = pd.read_csv(data_path, index_col=0, sep="\t")
+    data = pd.read_csv(data_path, index_col=0,sep="\t")
     
     # Create AnnData object
     adata = ad.AnnData(data.T)
@@ -52,7 +52,7 @@ def generate_Iso_adata(
     adata.var['isoform'] = adata.var.index
    
     
-    # Remove entries with NaN gene names
+    # # Remove entries with NaN gene names
 
     # adata = adata[:, adata.var.dropna(subset=['gene_id']).index]
     
