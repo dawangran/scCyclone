@@ -31,7 +31,7 @@ __all__ = [
 
 
 name = "scCyclone"
-__version__ = "1.0.3"
+__version__ = "1.0.2"
 
 
 scCyclone_logo="""
