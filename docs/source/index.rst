@@ -24,8 +24,29 @@ scCyclone is a comprehensive Python package designed to analyze single-cell full
 
 * **RNA Binding Protein (RBP) Analysis with rMAPS Output**: This feature allows for the analysis of RNA binding protein (RBP) binding patterns and provides output files compatible with rMAPS（http://rmaps.cecsresearch.org/）, a popular tool for differential splicing analysis. This can help researchers understand the role of RBPs in regulating gene expression and splicing events.
 
+
+## Getting Started
+
+### Prerequisites
+
+Before you begin, ensure you have met the following requirements:
+- Python 3.8 or higher
+- A compatible operating system (e.g., Windows, macOS, Linux)
+
+* [scanpy](https://github.com/scverse/scanpy)
+* [dotplot](https://github.com/kn-bibs/dotplot)
+
+
+### Installation
+
+To install the software, follow these steps:
+
+```
+pip install scCyclone
+```
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   notebooks/index.md
    notebooks/tutorial
