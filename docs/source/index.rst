@@ -10,22 +10,24 @@ scCyclone documentation
 scCyclone is a comprehensive Python package designed to analyze single-cell full-length transcriptome data.
 
 
-``Feature``
+Feature
+----------------------
 
-* **Personalized Matrix Generation**: This feature allows users to create custom matrices tailored to their specific dataset requirements, providing flexibility in handling various types of single-cell sequencing data.
+* Personalized Matrix Generation : This feature allows users to create custom matrices tailored to their specific dataset requirements, providing flexibility in handling various types of single-cell sequencing data.
 
-* **Differential Transcript Usage (DTU) Analysis**: This tool helps identify variations in transcript usage across different cell populations, enabling researchers to understand how gene expression patterns differ under different conditions.
+* Differential Transcript Usage (DTU) Analysis : This tool helps identify variations in transcript usage across different cell populations, enabling researchers to understand how gene expression patterns differ under different conditions.
 
-* **Functional and Structural Analysis of Differential Transcripts**: This feature goes beyond simple identification of differential transcripts by providing a deeper analysis of their functional and structural implications. This can help researchers understand the biological significance of the observed transcript usage differences.
+* Functional and Structural Analysis of Differential Transcripts : This feature goes beyond simple identification of differential transcripts by providing a deeper analysis of their functional and structural implications. This can help researchers understand the biological significance of the observed transcript usage differences.
 
-* **Differential Splicing Event (DSE) Analysis**: This feature is designed to detect differences in splicing patterns within single-cell data, which is crucial for identifying splice variants that may be associated with specific cellular processes or conditions.
+* Differential Splicing Event (DSE) Analysis : This feature is designed to detect differences in splicing patterns within single-cell data, which is crucial for identifying splice variants that may be associated with specific cellular processes or conditions.
 
-* **Modal Analysis of Splicing Events**: This feature involves examining the distribution of splicing events to identify common patterns or central tendencies. This can provide insights into the most frequent or significant splicing patterns within the dataset.
+* Modal Analysis of Splicing Events : This feature involves examining the distribution of splicing events to identify common patterns or central tendencies. This can provide insights into the most frequent or significant splicing patterns within the dataset.
 
-* **RNA Binding Protein (RBP) Analysis with rMAPS Output**: This feature allows for the analysis of RNA binding protein (RBP) binding patterns and provides output files compatible with rMAPS（http://rmaps.cecsresearch.org/）, a popular tool for differential splicing analysis. This can help researchers understand the role of RBPs in regulating gene expression and splicing events.
+* RNA Binding Protein (RBP) Analysis with rMAPS Output : This feature allows for the analysis of RNA binding protein (RBP) binding patterns and provides output files compatible with rMAPS（http://rmaps.cecsresearch.org/）, a popular tool for differential splicing analysis. This can help researchers understand the role of RBPs in regulating gene expression and splicing events.
 
 
-## Getting Started
+Installation
+----------------------
 
 ### Prerequisites
 
@@ -36,14 +38,9 @@ Before you begin, ensure you have met the following requirements:
 * [scanpy](https://github.com/scverse/scanpy)
 * [dotplot](https://github.com/kn-bibs/dotplot)
 
+::
+   pip install scCyclone
 
-### Installation
-
-To install the software, follow these steps:
-
-```
-pip install scCyclone
-```
 
 
 .. toctree::
