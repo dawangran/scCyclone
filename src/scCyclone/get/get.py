@@ -25,7 +25,7 @@ def rank_ifs_groups_df(
     adata: ad.AnnData,
     group: Union[None, str, list] = None,
     key: str = "rank_ifs_groups",
-    pval_cutoff: float = 0.05,
+    pval_cutoff: Union[None, float]  = None,
     min_dif: float = 0,
     max_dif: float = 1,
     rank_state: Union[None, str] = None,

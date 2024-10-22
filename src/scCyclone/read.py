@@ -210,20 +210,22 @@ def generate_IF_adata(
         data_gene = data_iso.iloc[:, :-1]
         data_gene[var_name] = adata.var[var_name].to_list()
         data_gene = data_gene.groupby(var_name).agg("sum")
-        data_IF = pd.DataFrame()
+        data_IF_dict = {}
         for i, j in enumerate(data_iso.index):
             sub_data = data_iso.iloc[i, :-1].values
             gene = data_iso.iloc[i, -1]
             sub_gene = data_gene.loc[gene].values
-            data_IF[j] = list(sub_data / sub_gene)
+            np.seterr(divide='ignore', invalid='ignore')
+            data_IF_dict[j] = list(sub_data / sub_gene)
             
             if i % 1000 == 0:
                 print("process succes {}".format(i))
                 
+        data_IF = pd.DataFrame(data_IF_dict)
         data_IF = data_IF.T
         data_IF.columns = data_gene.columns
         adata_IF = ad.AnnData(data_IF.T)
-        adata_IF.obs = adata_IF.obs.rename_axis("cell", axis="index")
+        adata_IF.obs = adata_IF.obs.rename_axis("sample", axis="index")
         adata_IF.obs[obs_name] = adata_IF.obs.index
         
     else:
@@ -237,19 +239,22 @@ def generate_IF_adata(
         data_gene = data.groupby(var_name).agg(sum)
 
         # Initialize DataFrame for isoform fraction data
-        data_IF = pd.DataFrame()
+        data_IF_dict = {}
 
         # Calculate isoform fraction for each gene
         for i, j in enumerate(data.index):
             sub_data = data.iloc[i, :-1].values
             gene = data.iloc[i, -1]
             sub_gene = data_gene.loc[gene].values
-            data_IF[j] = list(sub_data / sub_gene)
+            np.seterr(divide='ignore', invalid='ignore')
+            data_IF_dict[j] = list(sub_data / sub_gene)
             
             if i % 1000 == 0:
                 print("Process successful for {}".format(i))
 
         # Transpose DataFrame and create AnnData object
+        
+        data_IF = pd.DataFrame(data_IF_dict)
         data_IF = data_IF.T
         data_IF.columns = data_gene.columns
         adata_IF = ad.AnnData(data_IF.T)

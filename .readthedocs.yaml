@@ -12,3 +12,6 @@ sphinx:
 python:
   install:
     - requirements: docs/requirements.txt
+
+mkdocs:
+  configuration: docs/mkdocs.yml
