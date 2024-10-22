@@ -1,16 +1,16 @@
-.. scCyclone documentation master file, created by
-   sphinx-quickstart on Sat Oct 12 15:08:57 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+[![PyPI](https://img.shields.io/pypi/v/scCyclone?logo=PyPI)](https://pypi.org/project/scCyclone)
+[![Documentation Status](https://readthedocs.org/projects/sccyclone/badge/?version=latest)](https://sccyclone.readthedocs.io/en/latest/?badge=latest)
 
-scCyclone documentation
-=======================
+
+
+# scCyclone: Single-Cell Cyclone Analysis in Python
 
 
 scCyclone is a comprehensive Python package designed to analyze single-cell full-length transcriptome data.
 
 
-``Feature``
+## Features
+
 
 * **Personalized Matrix Generation**: This feature allows users to create custom matrices tailored to their specific dataset requirements, providing flexibility in handling various types of single-cell sequencing data.
 
@@ -24,8 +24,28 @@ scCyclone is a comprehensive Python package designed to analyze single-cell full
 
 * **RNA Binding Protein (RBP) Analysis with rMAPS Output**: This feature allows for the analysis of RNA binding protein (RBP) binding patterns and provides output files compatible with rMAPS（http://rmaps.cecsresearch.org/）, a popular tool for differential splicing analysis. This can help researchers understand the role of RBPs in regulating gene expression and splicing events.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-   notebooks/index.md
-   notebooks/tutorial
+
+
+## Getting Started
+
+### Prerequisites
+
+Before you begin, ensure you have met the following requirements:
+- Python 3.8 or higher
+- A compatible operating system (e.g., Windows, macOS, Linux)
+
+* [scanpy](https://github.com/scverse/scanpy)
+* [dotplot](https://github.com/kn-bibs/dotplot)
+
+
+### Installation
+
+To install the software, follow these steps:
+
+```
+pip install scCyclone
+```
+
+## License
+scCyclone is released under the MIT License.
+
