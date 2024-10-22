@@ -1,5 +1,5 @@
 sphinx-markdown-tables==0.0.17
 sphinx_rtd_theme==3.0.1
 recommonmark==0.7.1
-pandoc
+pandoc==4.0
 nbsphinx
