@@ -26,16 +26,6 @@ Feature
 * RNA Binding Protein (RBP) Analysis with rMAPS Output : This feature allows for the analysis of RNA binding protein (RBP) binding patterns and provides output files compatible with rMAPS（http://rmaps.cecsresearch.org/）, a popular tool for differential splicing analysis. This can help researchers understand the role of RBPs in regulating gene expression and splicing events.
 
 
-Installation
-----------------------
-
-Before you begin, ensure you have met the following requirements::
-   pip install scanpy python-dotplot
-   pip install scCyclone
-
-
-
-
 
 .. toctree::
    :maxdepth: 2
