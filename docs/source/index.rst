@@ -7,10 +7,6 @@ scCyclone documentation
 =======================
 
 
-scCyclone is a comprehensive Python package designed to analyze single-cell full-length transcriptome data.
-
-
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
