@@ -470,48 +470,49 @@ def rank_ifs_groups(
     
     # Iterate over groups
     for i in groups_order:
-        print("Group {} start!".format(i))
-        target_groups = [i]
-        ref_groups = [x for x in groups_order if x != i] if reference == "rest" else [reference]
+        if i != reference:
+            print("Group {} start!".format(i))
+            target_groups = [i]
+            ref_groups = [x for x in groups_order if x != i] if reference == "rest" else [reference]
 
-        adata_target = adata_filter[adata_filter.obs[groupby].isin(target_groups)]
-        adata_ref = adata_filter[adata_filter.obs[groupby].isin(ref_groups)]
-        print("Generate IF matrix...")
-        data_target_IF_matrix = _generate_IF_bulk_matrix(adata_target, gene_iso=gene_iso)
-        data_ref_IF_matrix = _generate_IF_bulk_matrix(adata_ref, gene_iso=gene_iso)
+            adata_target = adata_filter[adata_filter.obs[groupby].isin(target_groups)]
+            adata_ref = adata_filter[adata_filter.obs[groupby].isin(ref_groups)]
+            print("Generate IF matrix...")
+            data_target_IF_matrix = _generate_IF_bulk_matrix(adata_target, gene_iso=gene_iso)
+            data_ref_IF_matrix = _generate_IF_bulk_matrix(adata_ref, gene_iso=gene_iso)
 
-        print("Generate rank matrix...")
-        data_target_rank = _generate_iso_rank(data_target_IF_matrix, gene_iso=gene_iso)
-        data_ref_rank = _generate_iso_rank(data_ref_IF_matrix, gene_iso=gene_iso)
+            print("Generate rank matrix...")
+            data_target_rank = _generate_iso_rank(data_target_IF_matrix, gene_iso=gene_iso)
+            data_ref_rank = _generate_iso_rank(data_ref_IF_matrix, gene_iso=gene_iso)
 
-        print("Generate IF adata...")
-        adata_target_IF = _generate_IF_adata(adata_target, var_name=var_name)
-        adata_ref_IF = _generate_IF_adata(adata_ref, var_name=var_name)
+            print("Generate IF adata...")
+            adata_target_IF = _generate_IF_adata(adata_target, var_name=var_name)
+            adata_ref_IF = _generate_IF_adata(adata_ref, var_name=var_name)
+            
+            print("Compute dIF...")
+            dif_list = _compute_dif(data_ref_IF_matrix, data_target_IF_matrix)
+            dr_list, dr_state_list, dr_first_list = _compute_rank(data_ref_rank, data_target_rank)
+            
+            print("Compute pvalue...")
+            pval_list = _compute_pvalue(adata_ref_IF, adata_target_IF)
+            pval_adj_list = _utils.compute_pvalue_bonferroni(pval_list)
+            
+            print("Compute proportion...")
+            dpr_list = _compute_proportion(adata_ref_IF, adata_target_IF)
+            
+            data_iso_dict[i] = iso_list
+            data_dif_dict[i] = dif_list
+            data_dr_dict[i] = dr_list
+            data_dr_state_dict[i] = dr_state_list
+            data_dr_first_dict[i] = dr_first_list
+            data_pval_dict[i] = pval_list
+            data_pval_adj_dict[i] = pval_adj_list
+            data_dpr_dict[i] = dpr_list 
+            var_name_dict[i] = adata_target.var[var_name].to_list()
+            
+            print("Group {} complete!".format(i))
+            print("-----------------------------------------")
         
-        print("Compute dIF...")
-        dif_list = _compute_dif(data_ref_IF_matrix, data_target_IF_matrix)
-        dr_list, dr_state_list, dr_first_list = _compute_rank(data_ref_rank, data_target_rank)
-        
-        print("Compute pvalue...")
-        pval_list = _compute_pvalue(adata_ref_IF, adata_target_IF)
-        pval_adj_list = _utils.compute_pvalue_bonferroni(pval_list)
-        
-        print("Compute proportion...")
-        dpr_list = _compute_proportion(adata_ref_IF, adata_target_IF)
-        
-        data_iso_dict[i] = iso_list
-        data_dif_dict[i] = dif_list
-        data_dr_dict[i] = dr_list
-        data_dr_state_dict[i] = dr_state_list
-        data_dr_first_dict[i] = dr_first_list
-        data_pval_dict[i] = pval_list
-        data_pval_adj_dict[i] = pval_adj_list
-        data_dpr_dict[i] = dpr_list 
-        var_name_dict[i] = adata_target.var[var_name].to_list()
-        
-        print("Group {} complete!".format(i))
-        print("-----------------------------------------")
-    
     # Convert dictionaries to structured arrays
     name_data = pd.DataFrame(data_iso_dict).to_records(index=False)
     dif_data = pd.DataFrame(data_dif_dict).to_records(index=False)
