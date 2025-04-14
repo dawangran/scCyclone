@@ -87,7 +87,9 @@ def add_gtf(
     data=data.rename(columns={3:"exon_start",4:"exon_end"})
     data=data.groupby("isoform").agg({"exon_start":list,"exon_end":list})
     data=data[data.index.isin(list(adata.var.index))]
-    data=data.loc[list(adata.var.index)]
+    over_list=set(data.index) & set(adata.var.index)
+    sorted_list=[i for i in adata.var.index if i in over_list]
+    data=data.loc[sorted_list]
     exon_dict={}
     for n,s,e in zip(data.index,data['exon_start'],data['exon_end']):
         exon_dict[n]=[s,e]
@@ -121,9 +123,9 @@ def add_cpc2(
         logging.error(f"Transcript info file {cpc2_result_path} does not exist.")
 
     # Read CPC2 result file and set 'isoform' column
-    t_info = pd.read_csv(cpc2_result_path, index_col=0)
+    t_info = pd.read_csv(cpc2_result_path, index_col=0,sep="\t")
     t_info['isoform'] = list(t_info.index)
-    t_info = t_info.replace({"coding":True,"nocoding":False})
+    t_info = t_info.replace({"coding":True,"noncoding":False})
 
 
     # Merge each column from CPC2 result with isoform data
@@ -170,11 +172,11 @@ def add_pfam(
     t_info = t_info[t_info['hmm_name'] != "RSB_motif"]
     
     # Group PFAM results by isoform to aggregate domain count and list of domains
-    t_info_type = t_info.groupby("isoform").agg({"clan": "count", "hmm_list": list})
+    t_info_type = t_info.groupby("isoform").agg({"clan": "count", "hmm_name": list})
     
     # Merge domain count and domain list with isoform data in adata
     adata.var["domain_number"] = pd.merge(adata.var, t_info_type, on='isoform', how='left')["clan"].tolist()
-    adata.var["hmm_list"] = pd.merge(adata.var, t_info_type, on='isoform', how='left')["hmm_list"].tolist()
+    adata.var["hmm_list"] = pd.merge(adata.var, t_info_type, on='isoform', how='left')["hmm_name"].tolist()
     
     return adata
 

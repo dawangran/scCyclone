@@ -3,7 +3,7 @@
 @File    :   setup.py
 @Time    :   2024/10/11
 @Author  :   Dawn
-@Version :   1.0
+@Version :   1.1.0
 @Desc    :   Setup
 """
 
@@ -15,7 +15,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
  
 setuptools.setup(
     name="scCyclone", 
-    version="1.0.3",
+    version="1.1.0",
     author="Dawn",
     author_email="605547565@qq.com",
     description="Single-Cell Cyclone Analysis Package",

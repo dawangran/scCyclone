@@ -21,6 +21,8 @@ import numpy as np
 __root_dir__ = os.path.abspath(os.path.dirname(__file__))
 
 
+
+
 def rank_ifs_groups_df(
     adata: ad.AnnData,
     group: Union[None, str, list] = None,
@@ -28,13 +30,12 @@ def rank_ifs_groups_df(
     pval_cutoff: float = 0.05,
     min_dif: float = 0,
     max_dif: float = 1,
-    rank_state: Union[None, str] = None,
-    first: bool = False,
     dpr_cutoff: Union[None, float] = None,
+    tpr_cutoff: Union[None, float] = None,
+    rpr_cutoff: Union[None, float] = None,
     compare_abs: bool = False
     ):
     """
-    Rank and filter differential splicing events by group in an AnnData object.
 
     Parameters:
     ----------
@@ -45,9 +46,9 @@ def rank_ifs_groups_df(
     pval_cutoff (float): P-value cutoff for analysis.
     min_dif (float): Minimum difference value.
     max_dif (float): Maximum difference value.
-    rank_state (Union[None, str]): State for ranking ('up', 'down', 'normal', or None).
-    first (bool): Flag to filter for the first occurrence.
     dpr_cutoff (float): dpr cutoff for analysis.
+    tpr_cutoff (float): tpr cutoff for analysis.
+    rpr_cutoff (float): rpr cutoff for analysis.
     compare_abs (bool): Flag to compare absolute values.
 
     Returns:
@@ -61,15 +62,12 @@ def rank_ifs_groups_df(
     if not (0 <= max_dif <= 1):
         raise ValueError("max_dif must be between 0 and 1.")    
 
-    if rank_state not in ["up", "down", "normal", None]:
-        raise ValueError("Invalid rank_state value. Please provide 'up', 'down', 'normal', or None.")
-
     if isinstance(group, str):
         group = [group]
     if group is None:
         group = list(adata.uns[key]["names"].dtype.names)
 
-    colnames = ["names", "dif", "dr", "dr_state", "dr_first", "pvals", "pvals_adj", "dpr","gene_name"]
+    colnames = ["names", "dif", "pvals", "pvals_adj", "dpr","rpr","tpr","rif","tif","gene_name"]
 
     d = [pd.DataFrame(adata.uns[key][c])[group] for c in colnames]
     d = pd.concat(d, axis=1, names=[None, "group"], keys=colnames)
@@ -84,6 +82,12 @@ def rank_ifs_groups_df(
     if pval_cutoff is not None:
         d = d[d["pvals_adj"] <= pval_cutoff]
 
+    if tpr_cutoff is not None:
+        d = d[d["tpr"] >= tpr_cutoff]
+    
+    if rpr_cutoff is not None:
+        d = d[d["rpr"] >= rpr_cutoff]
+
     if dpr_cutoff is not None:
         if not (0 <= dpr_cutoff <= 1):
             raise ValueError("dpr_cutoff must be between 0 and 1.")
@@ -92,12 +96,9 @@ def rank_ifs_groups_df(
     d = d[(abs(d["dif"]) >= min_dif if compare_abs==True else d["dif"] >= min_dif) & 
           (abs(d["dif"]) <= max_dif if compare_abs==True else d["dif"] <= max_dif)]
 
-    if rank_state is not None:
-        d = d[d["dr_state"] == rank_state]
-    if first:
-        d = d[d["dr_first"] == first]
 
     return d.reset_index(drop=True)
+
 
 
 
@@ -157,7 +158,9 @@ def rank_psis_groups_df(
     pval_cutoff: Union[None,float] = None,
     min_dpsi: float = 0,
     max_dpsi: float = 1,
-    gene_symbols: Union[None, str] = None,
+    dpr_cutoff: Union[None, float] = None,
+    tpr_cutoff: Union[None, float] = None,
+    rpr_cutoff: Union[None, float] = None,
     compare_abs: bool = False
     ):
     
@@ -173,7 +176,9 @@ def rank_psis_groups_df(
     pval_cutoff (float): P-value cutoff for analysis.
     min_dpsi (float): Minimum delta PSI value.
     max_dpsi (float): Maximum delta PSI value.
-    gene_symbols (Union[None, str]): Gene symbol information.
+    dpr_cutoff (float): dpr cutoff for analysis.
+    tpr_cutoff (float): tpr cutoff for analysis.
+    rpr_cutoff (float): tpr cutoff for analysis.
     compare_abs (bool): Flag to compare absolute values.
 
     Returns:
@@ -192,7 +197,7 @@ def rank_psis_groups_df(
     if group is None:
         group = list(adata.uns[key]["names"].dtype.names)
 
-    colnames = ["names", "dpsi", "pvals", "pvals_adj"]
+    colnames = ["names", "dpsi", "pvals", "pvals_adj","dpr","rpr","tpr","rpsi","tpsi","gene_name"]
 
     d = [pd.DataFrame(adata.uns[key][c])[group] for c in colnames]
     d = pd.concat(d, axis=1, names=[None, "group"], keys=colnames)
@@ -207,8 +212,17 @@ def rank_psis_groups_df(
     if pval_cutoff is not None:
         d = d[d["pvals_adj"] <= pval_cutoff]
 
-    if gene_symbols is not None:
-        d = d.join(adata.var[gene_symbols], on="names")
+    if tpr_cutoff is not None:
+        d = d[d["tpr"] >= tpr_cutoff]
+        
+    if rpr_cutoff is not None:
+        d = d[d["rpr"] >= rpr_cutoff]
+
+    if dpr_cutoff is not None:
+        if not (0 <= dpr_cutoff <= 1):
+            raise ValueError("dpr_cutoff must be between 0 and 1.")
+        d = d[(abs(d["dpr"]) >= dpr_cutoff if compare_abs==True else d["dpr"] >= dpr_cutoff)]
+
         
     d = d[(abs(d["dpsi"]) >= min_dpsi if compare_abs==True else d["dpsi"] >= min_dpsi) & 
           (abs(d["dpsi"]) <= max_dpsi if compare_abs==True else d["dpsi"] <= max_dpsi)]
@@ -425,6 +439,7 @@ def psis_rmaps_df(
         psi_data['upstreamExonEnd']=upstreamExonEnd_list
         psi_data['downstreamExonStart']=downstreamExonStart_list
         psi_data['downstreamExonEnd']=downstreamExonEnd_list
+        psi_data['event_id']=event_list
         
     return psi_data
 
@@ -503,7 +518,6 @@ def psis_modal_df(
     for i in data.columns:
         sub_data = data[[i]]
         sub_data = sub_data.dropna(subset=[i])
-        print(sub_data)
         if sub_data.shape[0] >= valid_cells:
             bins = np.linspace(0, 1, 11)
             sub_data['bin'] = pd.cut(sub_data[i], bins, include_lowest=True)
@@ -529,3 +543,82 @@ def psis_modal_df(
     event_best_modal_data = pd.DataFrame({"event": event_modal_data.columns.to_list(), "state": best_event_modal})
 
     return event_modal_data, event_best_modal_data
+
+
+
+# def rank_ifs_groups_df(
+#     adata: ad.AnnData,
+#     group: Union[None, str, list] = None,
+#     key: str = "rank_ifs_groups",
+#     pval_cutoff: float = 0.05,
+#     min_dif: float = 0,
+#     max_dif: float = 1,
+#     rank_state: Union[None, str] = None,
+#     first: bool = False,
+#     dpr_cutoff: Union[None, float] = None,
+#     compare_abs: bool = False
+#     ):
+#     """
+
+#     Parameters:
+#     ----------
+    
+#     adata (ad.AnnData): Anndata object containing the data.
+#     group (Union[None, str, list]): Groups of interest for analysis.
+#     key (str): Key for the data.
+#     pval_cutoff (float): P-value cutoff for analysis.
+#     min_dif (float): Minimum difference value.
+#     max_dif (float): Maximum difference value.
+#     rank_state (Union[None, str]): State for ranking ('up', 'down', 'normal', or None).
+#     first (bool): Flag to filter for the first occurrence.
+#     dpr_cutoff (float): dpr cutoff for analysis.
+#     compare_abs (bool): Flag to compare absolute values.
+
+#     Returns:
+#     ----------
+    
+#     pd.DataFrame: DataFrame containing ranked and filtered differential splicing events.
+#     """
+
+#     if not (0 <= min_dif <= 1):
+#         raise ValueError("min_dif must be between 0 and 1.")
+#     if not (0 <= max_dif <= 1):
+#         raise ValueError("max_dif must be between 0 and 1.")    
+
+#     if rank_state not in ["up", "down", "normal", None]:
+#         raise ValueError("Invalid rank_state value. Please provide 'up', 'down', 'normal', or None.")
+
+#     if isinstance(group, str):
+#         group = [group]
+#     if group is None:
+#         group = list(adata.uns[key]["names"].dtype.names)
+
+#     colnames = ["names", "dif", "dr", "dr_state", "dr_first", "pvals", "pvals_adj", "dpr","rpr","tpr","gene_name"]
+
+#     d = [pd.DataFrame(adata.uns[key][c])[group] for c in colnames]
+#     d = pd.concat(d, axis=1, names=[None, "group"], keys=colnames)
+
+#     if Version(pd.__version__) >= Version("2.1"):
+#         d = d.stack(level=1, future_stack=True).reset_index()
+#     else:
+#         d = d.stack(level=1).reset_index()
+#     d["group"] = pd.Categorical(d["group"], categories=group)
+#     d = d.sort_values(["group", "level_0"]).drop(columns="level_0")
+
+#     if pval_cutoff is not None:
+#         d = d[d["pvals_adj"] <= pval_cutoff]
+
+#     if dpr_cutoff is not None:
+#         if not (0 <= dpr_cutoff <= 1):
+#             raise ValueError("dpr_cutoff must be between 0 and 1.")
+#         d = d[(abs(d["dpr"]) >= dpr_cutoff if compare_abs==True else d["dpr"] >= dpr_cutoff)]
+
+#     d = d[(abs(d["dif"]) >= min_dif if compare_abs==True else d["dif"] >= min_dif) & 
+#           (abs(d["dif"]) <= max_dif if compare_abs==True else d["dif"] <= max_dif)]
+
+#     if rank_state is not None:
+#         d = d[d["dr_state"] == rank_state]
+#     if first:
+#         d = d[d["dr_first"] == first]
+
+#     return d.reset_index(drop=True)

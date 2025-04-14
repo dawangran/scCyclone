@@ -19,17 +19,21 @@ def check_groups(
     groupby: str,
     groups: Union[str, list] = "all",
     reference: str = "rest",
-):
+    ):
     """
     Check and validate groups based on a specific column in AnnData object.
 
     Parameters:
+    ----------
+    
     adata (ad.AnnData): AnnData object containing the data.
     groupby (str): Column in adata.obs to group by.
     groups (Union[str, list]): Specific groups to check.
     reference (str): Reference group.
 
     Returns:
+    ----------
+    
     list: List of validated groups.
     """
     

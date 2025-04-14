@@ -17,7 +17,8 @@ import scanpy as sc
 
 from . import _utils
 
-
+import warnings
+warnings.filterwarnings('ignore')
 
 def _filter_event(
     adata: ad.AnnData,
@@ -87,6 +88,11 @@ def _compute_dpsi(e, data_a, data_b, valid_cells, n_bins, random_seed=22):
     """
     sub_a = data_a[[e]].dropna()
     sub_b = data_b[[e]].dropna()
+    rpr_value=sub_a[e].shape[0]/data_a.shape[0]
+    tpr_value=sub_b[e].shape[0]/data_b.shape[0]
+    dpr_value=tpr_value-rpr_value
+    rpsi_value=np.round(sub_a.median().values[0],3)
+    tpsi_value=np.round(sub_b.median().values[0],3)
     
     min_shape = min(sub_a.shape[0], sub_b.shape[0])
     dpsi_observed = np.round((sub_b.median() - sub_a.median()).values[0], 3)
@@ -111,7 +117,12 @@ def _compute_dpsi(e, data_a, data_b, valid_cells, n_bins, random_seed=22):
     return {
         "event": e,
         "dpsi_shuffle": dpsi_list,
-        "dpsi_observed": dpsi_observed
+        "dpsi_observed": dpsi_observed,
+        "rpsi_value":rpsi_value,
+        "tpsi_value":tpsi_value,
+        "rpr_value":rpr_value,
+        "tpr_value":tpr_value,
+        "dpr_value":dpr_value,
     }
     
     
@@ -168,6 +179,7 @@ def rank_psis_groups(
     valid_cells: int = 50,
     n_bins: int = 100,
     random_seed: int = 22,
+    var_name: str ="gene_name"
     ):
     """
     Rank psi for characterizing groups.
@@ -209,6 +221,12 @@ def rank_psis_groups(
     data_dpsi_observed_dict = {}
     data_pval_dict = {}
     data_pval_adj_dict = {}
+    data_dpr_dict = {}
+    data_rpr_dict ={}
+    data_tpr_dict ={}
+    data_rpsi_dict = {}
+    data_tpsi_dict = {}
+    var_name_dict = {}
     
 
     # Iterate over groups
@@ -238,6 +256,12 @@ def rank_psis_groups(
             data_dpsi_observed_dict[i] = result['dpsi_observed'].to_list()
             data_pval_dict[i] = result['pvals'].to_list()
             data_pval_adj_dict[i] = _utils.compute_pvalue_bonferroni(result['pvals'].to_list())
+            data_rpsi_dict[i] = result['rpsi_value'].to_list()
+            data_tpsi_dict[i] = result['tpsi_value'].to_list()
+            data_dpr_dict[i] = result['dpr_value'].to_list()
+            data_rpr_dict[i] = result['rpr_value'].to_list()
+            data_tpr_dict[i] = result['tpr_value'].to_list()
+            var_name_dict[i] = adata_target[:,result['event'].to_list()].var[var_name].to_list()
 
             print("Group {} complete!".format(i))
             print("-----------------------------------------")
@@ -247,12 +271,26 @@ def rank_psis_groups(
     dpsi_data = pd.DataFrame(data_dpsi_observed_dict).to_records(index=False)
     pval_data = pd.DataFrame(data_pval_dict).to_records(index=False)
     pval_adj_data = pd.DataFrame(data_pval_adj_dict).to_records(index=False)
+    dpr_data = pd.DataFrame(data_dpr_dict).to_records(index=False)
+    rpr_data = pd.DataFrame(data_rpr_dict).to_records(index=False)
+    tpr_data = pd.DataFrame(data_tpr_dict).to_records(index=False)
+    tpsi_data = pd.DataFrame(data_tpsi_dict).to_records(index=False)
+    rpsi_data = pd.DataFrame(data_rpsi_dict).to_records(index=False)
+    var_name_data = pd.DataFrame(var_name_dict).to_records(index=False)
+
+    
 
     # Store results in adata.uns
     adata.uns[key_added]['names'] = name_data
     adata.uns[key_added]['dpsi'] = dpsi_data
     adata.uns[key_added]['pvals'] = pval_data
     adata.uns[key_added]['pvals_adj'] = pval_adj_data
+    adata.uns[key_added]['dpr'] = dpr_data
+    adata.uns[key_added]['rpr'] = rpr_data
+    adata.uns[key_added]['tpr'] = tpr_data
+    adata.uns[key_added]['rpsi'] = rpsi_data
+    adata.uns[key_added]['tpsi'] = tpsi_data
+    adata.uns[key_added]['gene_name'] = var_name_data
 
     return adata
 
