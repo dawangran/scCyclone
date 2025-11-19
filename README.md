@@ -203,7 +203,7 @@ sc.pl.matrixplot(
 
 ## 🌏 简体中文简介
 
-scCyclone 是一个面向 **单细胞长读长测序（ONT/PacBio）** 的完整分析工具包，支持：
+scCyclone 是一个面向 **单细胞长读长测序** 的完整分析工具包，支持：
 
 - 构建 *转录本 / 基因 / IF / PSI* 多层级 AnnData  
 - 单细胞层面的 **差异转录本使用（DTU）**  
