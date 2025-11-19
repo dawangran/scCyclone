@@ -102,9 +102,11 @@ def rank_ifs_groups_df(
 
 
 
+
+
 def rank_switchs_groups_df(
     adata: ad.AnnData,
-    key: str = "rank_switchs_groups",
+    key: str = "rank_if_switchs_groups",
     ):
     """
     Rank and filter differential splicing events by group in an AnnData object.
@@ -128,7 +130,7 @@ def rank_switchs_groups_df(
 
 def rank_switch_consequences_groups_df(
     adata: ad.AnnData,
-    key: str = "rank_switch_consequences_groups",
+    key: str = "rank_if_switch_consequences_groups",
     ):
     """
     Rank and filter differential splicing events by group in an AnnData object.
@@ -546,79 +548,4 @@ def psis_modal_df(
 
 
 
-# def rank_ifs_groups_df(
-#     adata: ad.AnnData,
-#     group: Union[None, str, list] = None,
-#     key: str = "rank_ifs_groups",
-#     pval_cutoff: float = 0.05,
-#     min_dif: float = 0,
-#     max_dif: float = 1,
-#     rank_state: Union[None, str] = None,
-#     first: bool = False,
-#     dpr_cutoff: Union[None, float] = None,
-#     compare_abs: bool = False
-#     ):
-#     """
 
-#     Parameters:
-#     ----------
-    
-#     adata (ad.AnnData): Anndata object containing the data.
-#     group (Union[None, str, list]): Groups of interest for analysis.
-#     key (str): Key for the data.
-#     pval_cutoff (float): P-value cutoff for analysis.
-#     min_dif (float): Minimum difference value.
-#     max_dif (float): Maximum difference value.
-#     rank_state (Union[None, str]): State for ranking ('up', 'down', 'normal', or None).
-#     first (bool): Flag to filter for the first occurrence.
-#     dpr_cutoff (float): dpr cutoff for analysis.
-#     compare_abs (bool): Flag to compare absolute values.
-
-#     Returns:
-#     ----------
-    
-#     pd.DataFrame: DataFrame containing ranked and filtered differential splicing events.
-#     """
-
-#     if not (0 <= min_dif <= 1):
-#         raise ValueError("min_dif must be between 0 and 1.")
-#     if not (0 <= max_dif <= 1):
-#         raise ValueError("max_dif must be between 0 and 1.")    
-
-#     if rank_state not in ["up", "down", "normal", None]:
-#         raise ValueError("Invalid rank_state value. Please provide 'up', 'down', 'normal', or None.")
-
-#     if isinstance(group, str):
-#         group = [group]
-#     if group is None:
-#         group = list(adata.uns[key]["names"].dtype.names)
-
-#     colnames = ["names", "dif", "dr", "dr_state", "dr_first", "pvals", "pvals_adj", "dpr","rpr","tpr","gene_name"]
-
-#     d = [pd.DataFrame(adata.uns[key][c])[group] for c in colnames]
-#     d = pd.concat(d, axis=1, names=[None, "group"], keys=colnames)
-
-#     if Version(pd.__version__) >= Version("2.1"):
-#         d = d.stack(level=1, future_stack=True).reset_index()
-#     else:
-#         d = d.stack(level=1).reset_index()
-#     d["group"] = pd.Categorical(d["group"], categories=group)
-#     d = d.sort_values(["group", "level_0"]).drop(columns="level_0")
-
-#     if pval_cutoff is not None:
-#         d = d[d["pvals_adj"] <= pval_cutoff]
-
-#     if dpr_cutoff is not None:
-#         if not (0 <= dpr_cutoff <= 1):
-#             raise ValueError("dpr_cutoff must be between 0 and 1.")
-#         d = d[(abs(d["dpr"]) >= dpr_cutoff if compare_abs==True else d["dpr"] >= dpr_cutoff)]
-
-#     d = d[(abs(d["dif"]) >= min_dif if compare_abs==True else d["dif"] >= min_dif) & 
-#           (abs(d["dif"]) <= max_dif if compare_abs==True else d["dif"] <= max_dif)]
-
-#     if rank_state is not None:
-#         d = d[d["dr_state"] == rank_state]
-#     if first:
-#         d = d[d["dr_first"] == first]
-
-#     return d.reset_index(drop=True)

@@ -1,256 +1,276 @@
 # -*- coding: utf-8 -*-
 """
-@File    :   _rank_ifs_groups_update.py
+@File    :   _rank_ifs_groups.py
 @Time    :   2024/12/23
 @Author  :   Dawn
-@Version :   1.0
+@Version :   1.1
 @Desc    :   DIF for scCyclone
+             - Stable and reproducible permutation test (two-tailed)
+             - Expression ratio denominator: if no NA → use total rows; if NA → use non-NA rows
+             - var_name is written according to parameter, not hard-coded
 """
 
+from typing import Union, List, Dict, Any
+import warnings
+warnings.filterwarnings('ignore')
 
 import numpy as np
 import pandas as pd
 import anndata as ad
 from joblib import Parallel, delayed
-from typing import Union
+
+# Kept for API compatibility (although not directly used here)
 import scanpy as sc
 
 from . import _utils
 
 
-import warnings
-warnings.filterwarnings('ignore')
+# ------------------------------
+# Utility functions (local fallback for multiple testing correction)
+# ------------------------------
+def _bonferroni_safe(pvals: List[float]) -> List[float]:
+    """If _utils.compute_pvalue_bonferroni is unavailable, use local Bonferroni."""
+    n = len(pvals)
+    if n == 0:
+        return []
+    arr = np.asarray([1.0 if (p is None or not np.isfinite(p)) else float(p) for p in pvals], dtype=float)
+    adj = np.minimum(arr * n, 1.0)
+    return adj.tolist()
 
 
-
-def _compute_dif(e, data_a, data_b, valid_cells, n_bins, random_seed=22):
+def _two_sided_pvalue(dif_shuffle: List[float], dif_observed: float) -> float:
     """
-    Compute dpsi values for a given event.
-
-    Parameters
-    ----------
-    
-    e (list): Iso identifier.
-    data_a (pd.DataFrame): Data frame for group A.
-    data_b (pd.DataFrame): Data frame for group B.
-    min_cell_valid (int):The minimum number of effective cells.
-    n_bins (int): Number of expression level bins for sampling.
-    random_seed (int): Seed for the random number generator.
-
-    Returns
-    -------
-    dict
-        Dictionary containing the event, shuffled dpsi values, and observed dpsi value.
+    Two-tailed permutation p-value.  
+    Returns 1.0 if no permutations or invalid observation.  
+    No rounding here to avoid collapsing small effects into ties.
     """
+    if not np.isfinite(dif_observed) or len(dif_shuffle) == 0:
+        return 1.0
+    null = np.asarray(dif_shuffle, dtype=float)
+    k = int((np.abs(null) >= abs(dif_observed)).sum())
+    n = null.size
+    # Classical proportion; to be more conservative use (k+1)/(n+1)
+    return k / n
 
-    sub_a = data_a[[e]].dropna()
-    sub_b = data_b[[e]].dropna()
-    rpr_value=sub_a[e].gt(0).sum()/data_a.shape[0]
-    tpr_value=sub_b[e].gt(0).sum()/data_b.shape[0]
-    dpr_value=tpr_value-rpr_value
-    rif_value=np.round(sub_a.mean().values[0],3)
-    tif_value=np.round(sub_b.mean().values[0],3)
-    
-    min_shape = min(sub_a.shape[0], sub_b.shape[0])
-    dif_observed = np.round((sub_b.mean() - sub_a.mean()).values[0], 3)
-    
-    if min_shape >= valid_cells:
-        sub_data = pd.concat([sub_a, sub_b])
-        label_list = np.array(["ref"] * sub_a.shape[0] + ["target"] * sub_b.shape[0])
-        
-        dif_list = []
+
+def _compute_dif(
+    e: str,
+    data_ref: pd.DataFrame,
+    data_tgt: pd.DataFrame,
+    valid_cells: int,
+    n_bins: int,
+    rng: np.random.Generator,
+) -> Dict[str, Any]:
+    """
+    Compute DIF statistics for a single isoform.
+
+    Conventions:
+    - Denominator for expression ratio (rpr/tpr):
+        If the column contains no NA → use total rows;
+        If the column contains NA → use non-NA rows.
+    - Permutation is done by shuffling indices (no per-loop seeding to avoid dependency).
+    - Permutation performed only if both groups have ≥ valid_cells and n_bins > 0.
+    """
+    # Drop NA for mean and numerator calculation
+    sub_ref = data_ref[[e]].dropna()
+    sub_tgt = data_tgt[[e]].dropna()
+
+    # Denominator rule: no NA → full rows; otherwise → non-NA rows
+    ref_den = data_ref.shape[0] if data_ref[e].isna().sum() == 0 else max(sub_ref.shape[0], 1)
+    tgt_den = data_tgt.shape[0] if data_tgt[e].isna().sum() == 0 else max(sub_tgt.shape[0], 1)
+
+    # Expression ratio (>0 cell proportion)
+    rpr_value = float(sub_ref[e].gt(0).sum()) / ref_den if ref_den > 0 else 0.0
+    tpr_value = float(sub_tgt[e].gt(0).sum()) / tgt_den if tgt_den > 0 else 0.0
+    dpr_value = tpr_value - rpr_value
+
+    # Group means (sub_* already drop NA)
+    rif_value = float(sub_ref[e].mean()) if sub_ref.shape[0] else np.nan
+    tif_value = float(sub_tgt[e].mean()) if sub_tgt.shape[0] else np.nan
+    dif_observed = float(tif_value - rif_value) if np.isfinite(rif_value) and np.isfinite(tif_value) else np.nan
+
+    # Permutation
+    dif_shuffle: List[float] = []
+    if (
+        sub_ref.shape[0] >= valid_cells
+        and sub_tgt.shape[0] >= valid_cells
+        and n_bins > 0
+        and np.isfinite(dif_observed)
+    ):
+        # Concatenate values; each permutation shuffles indices
+        vals = pd.concat([sub_ref[e], sub_tgt[e]], axis=0).to_numpy()
+        n_ref = sub_ref.shape[0]
+        n_tot = vals.shape[0]
+
         for _ in range(n_bins):
-            if random_seed is not None:
-                np.random.seed(random_seed)  # 设置随机数种子
-            np.random.shuffle(label_list)
-            shuffle_a = sub_data[label_list == "ref"]
-            shuffle_b = sub_data[label_list == "target"]
-            
-            dif = np.round((shuffle_b.mean() - shuffle_a.mean()).values[0], 3)
-            dif_list.append(dif)
-    else:
-        dif_list = [None]
-    
+            perm = rng.permutation(n_tot)
+            ref_idx = perm[:n_ref]
+            tgt_idx = perm[n_ref:]
+            dif_shuffle.append(float(vals[tgt_idx].mean() - vals[ref_idx].mean()))
+
     return {
         "iso": e,
-        "dif_shuffle": dif_list,
         "dif_observed": dif_observed,
-        "rif_value":rif_value,
-        "tif_value":tif_value,
-        "rpr_value":rpr_value,
-        "tpr_value":tpr_value,
-        "dpr_value":dpr_value,
-        
-        
+        "dif_shuffle": dif_shuffle,
+        "rif_value": rif_value,
+        "tif_value": tif_value,
+        "rpr_value": rpr_value,
+        "tpr_value": tpr_value,
+        "dpr_value": dpr_value,
     }
-    
-    
-
-def _compute_pvalue(
-    dif_shuffle, 
-    dif_observed
-    ):
-    """
-    Compute p-value based on observed and shuffled dpsi values.
-
-    Parameters
-    ----------
-    
-    dif_shuffle (np.ndarray): An array containing shuffled dif values.
-    dif_observed (float): The observed dif value.
-
-    Returns
-    -------
-    float or None
-        Computed p-value.
-    """
-    if len(set(dif_shuffle)) > 1:
-        # 使用 NumPy 的广播特性来比较 observed 值与 shuffle 值
-        greater = np.array(dif_shuffle) > dif_observed
-        less = np.array(dif_shuffle) < dif_observed
-
-        count_greater = np.sum(greater)
-        count_less = np.sum(less)
-
-        # 如果 observed 值是正数，则计算大于 observed 的比例
-        # 如果 observed 值是负数，则计算小于 observed 的比例
-        # 如果 observed 值是零，则计算绝对值大于 shuffle 值的比例
-        if dif_observed > 0:
-            pvalue = count_greater / len(dif_shuffle)
-        elif dif_observed < 0:
-            pvalue = count_less / len(dif_shuffle)
-        else:
-            pvalue = (count_greater + count_less) / len(dif_shuffle)
-    else:
-        pvalue = 1  # 或者 None，取决于您如何处理这种情况
-
-    return pvalue
-
-
 
 
 def rank_ifs_groups(
     adata: ad.AnnData,
     groupby: str,
-    groups: Union[str, list]="all",
+    groups: Union[str, List[str]] = "all",
     reference: str = "rest",
     key_added: Union[str, None] = None,
     valid_cells: int = 50,
     n_bins: int = 100,
     random_seed: int = 22,
-    var_name: str ="gene_name"
-    ):
+    var_name: str = "gene_name",
+) -> ad.AnnData:
     """
-    Rank ifs for characterizing groups.
+    Compute DIF across groups and rank isoforms.
 
     Parameters
     ----------
-    
-    adata (ad.Anndata): Annotated data matrix.
-    groupby (str) :The key of the observations grouping to consider.
-    groups ([str, list]): Subset of groups, e.g. ['g1', 'g2', 'g3'], to which comparison shall be restricted, or 'all' (default), for all groups.
-    reference (str): If 'rest', compare each group to the union of the rest of the group. If a group identifier, compare with respect to this group.
-    key_added ([str, None]): The key in adata.uns information is saved to.
-    percent (float): The minimum percentage of cells in which a event must be expressed to be kept (default is 0.1).
-    valid_cells (int): The minimum number of effective cells.
-    n_bins (int): Number of expression level bins for sampling.
-    random_seed (int): Seed for the random number generator.
+    adata : AnnData
+    groupby : str
+        Column name in adata.obs for grouping.
+    groups : list or "all"
+        Target groups; "all" means all groups.
+    reference : str
+        Comparison reference: 'rest' means merge all remaining groups,
+        or specify an explicit group name.
+    key_added : str or None
+        Where to store results in adata.uns[key_added].
+    valid_cells : int
+        Minimum number of valid (non-NA) cells per group to run permutation.
+    n_bins : int
+        Number of permutations per isoform; 0 = no permutation (p=1.0).
+    random_seed : int
+        Random seed for reproducibility.
+    var_name : str
+        Column name from adata.var to attach as annotation.
 
     Returns
     -------
-    ad.AnnData
-        Annotated data matrix with rank information stored in adata.uns[key_added].
+    AnnData (results added to adata.uns[key_added])
     """
-
-    groups_order = _utils.check_groups(adata,groupby,groups,reference)
-    print(groups_order)
-    
-    iso_list = list(adata.var.index)
-    
-    # Initialize adata.uns[key_added]
-    
+    # Order of groups (utility from your helper functions)
+    groups_order = _utils.check_groups(adata, groupby, groups, reference)
     if key_added is None:
         key_added = "rank_ifs_groups"
-    adata.uns[key_added] = {}
-    adata.uns[key_added]["params"] = {"groupby": groupby, "reference": reference}
 
-    # Initialize empty dictionaries for storing results
-    data_iso_dict = {}
-    data_dif_observed_dict = {}
-    data_pval_dict = {}
-    data_pval_adj_dict = {}
-    data_dpr_dict = {}
-    data_rpr_dict ={}
-    data_tpr_dict ={}
-    data_rif_dict = {}
-    data_tif_dict = {}
-    var_name_dict = {}
-    
+    adata.uns[key_added] = {
+        "params": {
+            "groupby": groupby,
+            "reference": reference,
+            "valid_cells": valid_cells,
+            "n_bins": n_bins,
+            "random_seed": random_seed,
+            "var_name": var_name,
+        }
+    }
 
-    # Iterate over groups
-    for i in groups_order:
-        if i != reference:
-            print("Group {} start!".format(i))
-            iso_data_list = []
-            adata_target = adata[adata.obs[groupby] == i]
-            adata_ref = adata[adata.obs[groupby] != i] if reference == "rest" else adata[adata.obs[groupby].isin([reference])]
-            data_target = adata_target.to_df()
-            data_ref = adata_ref.to_df()
+    iso_index = list(adata.var.index)
 
-            # Parallel computation of dpsi
-            print("Compute dif...")
-            rs = Parallel(n_jobs=-1)(delayed(_compute_dif)(e, data_ref, data_target, valid_cells, n_bins, random_seed) for e in adata.var.index)
-            iso_data_list.extend(rs)
-            result = pd.DataFrame(iso_data_list)
+    data_iso_dict: Dict[str, List[str]] = {}
+    data_dif_observed_dict: Dict[str, List[float]] = {}
+    data_pval_dict: Dict[str, List[float]] = {}
+    data_pval_adj_dict: Dict[str, List[float]] = {}
+    data_dpr_dict: Dict[str, List[float]] = {}
+    data_rpr_dict: Dict[str, List[float]] = {}
+    data_tpr_dict: Dict[str, List[float]] = {}
+    data_rif_dict: Dict[str, List[float]] = {}
+    data_tif_dict: Dict[str, List[float]] = {}
+    var_name_dict: Dict[str, List[Any]] = {}
 
-            # Compute p-values and sort results
-            print("Compute pvalue...")
+    # Master RNG (used to generate per-isoform sub-seeds; ensures parallel reproducibility)
+    master_rng = np.random.default_rng(random_seed)
 
-            result['pvals'] = result.apply(lambda row: _compute_pvalue(row['dif_shuffle'], row['dif_observed']), axis=1)
-            result = result.sort_values(by=['dif_observed', 'pvals'], ascending=[False, True])
+    for g in groups_order:
+        if g == reference:
+            continue
 
-            # Store results in dictionaries
-            data_iso_dict[i] = result['iso'].to_list()
-            data_dif_observed_dict[i] = result['dif_observed'].to_list()
-            data_rif_dict[i] = result['rif_value'].to_list()
-            data_tif_dict[i] = result['tif_value'].to_list()
-            data_pval_dict[i] = result['pvals'].to_list()
-            data_dpr_dict[i] = result['dpr_value'].to_list()
-            data_rpr_dict[i] = result['rpr_value'].to_list()
-            data_tpr_dict[i] = result['tpr_value'].to_list()
-            data_pval_adj_dict[i] = _utils.compute_pvalue_bonferroni(result['pvals'].to_list())
-            var_name_dict[i] = adata_target[:,result['iso'].to_list()].var[var_name].to_list()
+        print(f"Group {g} start!")
+        adata_tgt = adata[adata.obs[groupby] == g]
+        if reference == "rest":
+            adata_ref = adata[adata.obs[groupby] != g]
+        else:
+            adata_ref = adata[adata.obs[groupby].isin([reference])]
 
-            print("Group {} complete!".format(i))
-            print("-----------------------------------------")
+        df_tgt = adata_tgt.to_df()
+        df_ref = adata_ref.to_df()
 
+        # Per-isoform seeds
+        seeds = master_rng.integers(0, np.iinfo(np.int32).max, size=len(iso_index))
 
-    # Convert dictionaries to structured arrays
-    name_data = pd.DataFrame(data_iso_dict).to_records(index=False)
-    dif_data = pd.DataFrame(data_dif_observed_dict).to_records(index=False)
-    pval_data = pd.DataFrame(data_pval_dict).to_records(index=False)
-    pval_adj_data = pd.DataFrame(data_pval_adj_dict).to_records(index=False)
-    dpr_data = pd.DataFrame(data_dpr_dict).to_records(index=False)
-    rpr_data = pd.DataFrame(data_rpr_dict).to_records(index=False)
-    tpr_data = pd.DataFrame(data_tpr_dict).to_records(index=False)
-    tif_data = pd.DataFrame(data_tif_dict).to_records(index=False)
-    rif_data = pd.DataFrame(data_rif_dict).to_records(index=False)
-    var_name_data = pd.DataFrame(var_name_dict).to_records(index=False)
-    
-    
+        # Parallel DIF computation
+        print("Compute DIF...")
+        results = Parallel(n_jobs=-1, prefer="threads")(
+            delayed(_compute_dif)(
+                e,
+                df_ref,
+                df_tgt,
+                valid_cells,
+                n_bins,
+                np.random.default_rng(int(seeds[i])),
+            )
+            for i, e in enumerate(iso_index)
+        )
+        res = pd.DataFrame(results)
 
-    # Store results in adata.uns
-    adata.uns[key_added]['names'] = name_data
-    adata.uns[key_added]['dif'] = dif_data
-    adata.uns[key_added]['pvals'] = pval_data
-    adata.uns[key_added]['pvals_adj'] = pval_adj_data
-    adata.uns[key_added]['dpr'] = dpr_data
-    adata.uns[key_added]['rpr'] = rpr_data
-    adata.uns[key_added]['tpr'] = tpr_data
-    adata.uns[key_added]['rif'] = rif_data
-    adata.uns[key_added]['tif'] = tif_data
-    adata.uns[key_added]['gene_name'] = var_name_data
+        # Two-sided p-values
+        print("Compute p-values...")
+        res["pvals"] = [_two_sided_pvalue(dsh, dob) for dsh, dob in zip(res["dif_shuffle"], res["dif_observed"])]
+
+        # Ranking: |effect| desc, p-value asc
+        res["_abs_dif"] = res["dif_observed"].abs().fillna(-np.inf)
+        res = res.sort_values(by=["_abs_dif", "pvals"], ascending=[False, True]).drop(columns=["_abs_dif"])
+
+        # Collect results (rounding only for display)
+        data_iso_dict[g] = res["iso"].tolist()
+        data_dif_observed_dict[g] = [None if pd.isna(x) else float(np.round(x, 3)) for x in res["dif_observed"]]
+        data_rif_dict[g] = [None if pd.isna(x) else float(np.round(x, 3)) for x in res["rif_value"]]
+        data_tif_dict[g] = [None if pd.isna(x) else float(np.round(x, 3)) for x in res["tif_value"]]
+        data_pval_dict[g] = [1.0 if pd.isna(x) else float(x) for x in res["pvals"]]
+        data_dpr_dict[g] = [None if pd.isna(x) else float(np.round(x, 4)) for x in res["dpr_value"]]
+        data_rpr_dict[g] = [None if pd.isna(x) else float(np.round(x, 4)) for x in res["rpr_value"]]
+        data_tpr_dict[g] = [None if pd.isna(x) else float(np.round(x, 4)) for x in res["tpr_value"]]
+
+        # Multiple testing correction
+        try:
+            data_pval_adj_dict[g] = _utils.compute_pvalue_bonferroni(data_pval_dict[g])
+        except Exception:
+            data_pval_adj_dict[g] = _bonferroni_safe(data_pval_dict[g])
+
+        # Attach var_name annotation
+        if var_name in adata.var.columns:
+            var_series = adata_tgt[:, res["iso"].tolist()].var[var_name]
+            var_name_dict[g] = var_series.tolist()
+        else:
+            var_name_dict[g] = res["iso"].tolist()
+
+        print(f"Group {g} complete!")
+        print("-----------------------------------------")
+
+    # Convert to recarray (scanpy-compatible)
+    def _to_records(d: Dict[str, List[Any]]):
+        return pd.DataFrame(d).to_records(index=False) if d else pd.DataFrame().to_records(index=False)
+
+    adata.uns[key_added]["names"]      = _to_records(data_iso_dict)
+    adata.uns[key_added]["dif"]        = _to_records(data_dif_observed_dict)
+    adata.uns[key_added]["pvals"]      = _to_records(data_pval_dict)
+    adata.uns[key_added]["pvals_adj"]  = _to_records(data_pval_adj_dict)
+    adata.uns[key_added]["dpr"]        = _to_records(data_dpr_dict)
+    adata.uns[key_added]["rpr"]        = _to_records(data_rpr_dict)
+    adata.uns[key_added]["tpr"]        = _to_records(data_tpr_dict)
+    adata.uns[key_added]["rif"]        = _to_records(data_rif_dict)
+    adata.uns[key_added]["tif"]        = _to_records(data_tif_dict)
+    # Stored under user-specified var_name instead of hard-coded "gene_name"
+    adata.uns[key_added][var_name]     = _to_records(var_name_dict)
 
     return adata
-
-

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-@File    :   _rank_swiths_groups.py
+@File    :   _rank_if_swiths_groups.py
 @Time    :   2024/09/04 
 @Author  :   Dawn
 @Version :   1.0
-@Desc    :   Switch for scCyclone
+@Desc    :   ISO Switch for scCyclone
 """
 
 
@@ -57,7 +57,7 @@ def _convert_table(data):
 
 
 
-def rank_switchs_groups(
+def rank_if_switchs_groups(
     adata: ad.AnnData,
     group: Union[None, str, list] = None,
     key: str = "rank_ifs_groups",
@@ -95,7 +95,7 @@ def rank_switchs_groups(
     
     # Set a default key if not provided
     if key_added is None:
-        key_added = "rank_switchs_groups"
+        key_added = "rank_if_switchs_groups"
     
     # Initialize parameters in adata.uns
     adata.uns[key_added] = {}
@@ -139,10 +139,10 @@ def rank_switchs_groups(
 
 
         
-def rank_switch_consequences_groups(
+def rank_if_switch_consequences_groups(
     adata: ad.AnnData, 
     var_name_list: list,
-    key: str = "rank_switchs_groups",
+    key: str = "rank_if_switchs_groups",
     key_added: Union[None, str] = None, 
     ):
     """
@@ -169,7 +169,7 @@ def rank_switch_consequences_groups(
     
     # Set a default key if not provided
     if key_added is None:
-        key_added = "rank_switch_consequences_groups"
+        key_added = "rank_if_switch_consequences_groups"
     
     # Initialize parameters in adata.uns
     adata.uns[key_added] = {}

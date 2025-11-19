@@ -15,9 +15,8 @@ import anndata as ad
 
 
 def splice_score(
-   
     adata_iso: ad.AnnData, 
-     event_dict: dict,
+    event_dict: dict,
     score_column: str = 'domain_number'
 ) -> ad.AnnData:
     """

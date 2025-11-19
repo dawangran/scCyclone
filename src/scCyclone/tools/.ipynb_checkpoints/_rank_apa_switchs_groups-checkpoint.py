@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-@File    :   _rank_swiths_groups.py
-@Time    :   2024/09/04 
+@File    :   _rank_apa_swiths_groups.py
+@Time    :   2025/06/17 
 @Author  :   Dawn
 @Version :   1.0
-@Desc    :   Switch for scCyclone
+@Desc    :   APA Switch for scCyclone
 """
 
 
@@ -49,7 +49,7 @@ def _convert_table(data):
         # Pair each 'u' value with all 'd' values
         for u_value in u_values:
             for d_value in d_values:
-                converted_data.append({'group': group, 'gene_name': gene_name, 'isoformUpregulated': u_value, 'isoformDownregulated': d_value})
+                converted_data.append({'group': group, 'gene_name': gene_name, 'apaUpregulated': u_value, 'apaDownregulated': d_value})
 
     # Create a DataFrame
     df = pd.DataFrame(converted_data)
@@ -57,17 +57,17 @@ def _convert_table(data):
 
 
 
-def rank_switchs_groups(
+def rank_apa_switchs_groups(
     adata: ad.AnnData,
     group: Union[None, str, list] = None,
-    key: str = "rank_ifs_groups",
+    key: str = "rank_apas_groups",
     key_added: Union[None, str] = None,
     pval_cutoff: Union[None, float] = 0.05,
     dpr_cutoff: Union[None, float] = None,
-    abs_min_dif: float = 0,
-    abs_max_dif: float = 1,
-    rank_state: Union[None, str] = None,
-    first: bool = False
+    tpr_cutoff: Union[None, float] = None,
+    rpr_cutoff: Union[None, float] = None,
+    abs_min_dpui: float = 0,
+    abs_max_dpui: float = 1,
     ):
     """
     Perform ranking and switching analysis on groups of interest in AnnData.
@@ -81,10 +81,11 @@ def rank_switchs_groups(
     key_added (Union[None, str]): Additional key to be added.
     pval_cutoff (float): P-value cutoff for analysis.
     dpr_cutoff (float): dpr cutoff for analysis.
-    abs_min_dif (float): Minimum difference for analysis.
-    abs_max_dif (float): Maximum difference for analysis.
-    rank_state (Union[None, str]): State for ranking.
-    first (bool): Flag for initial state.
+    tpr_cutoff (float): tpr cutoff for analysis.
+    rpr_cutoff (float): rpr cutoff for analysis.
+    abs_min_dpui (float): Minimum difference for analysis.
+    abs_max_dpui (float): Maximum difference for analysis.
+
 
     Returns:
     ----------
@@ -94,7 +95,7 @@ def rank_switchs_groups(
     
     # Set a default key if not provided
     if key_added is None:
-        key_added = "rank_switchs_groups"
+        key_added = "rank_apa_switchs_groups"
     
     # Initialize parameters in adata.uns
     adata.uns[key_added] = {}
@@ -102,32 +103,33 @@ def rank_switchs_groups(
 
     
     # Validate min_dif and max_dif values
-    if not (0 <= abs_min_dif <= 1) or not (0 <= abs_max_dif <= 1):
-        raise ValueError("abs_min_dif and abs_max_dif must be between 0 and 1.")
+    if not (0 <= abs_min_dpui <= 1) or not (0 <= abs_max_dpui <= 1):
+        raise ValueError("abs_min_dpui and abs_max_dpui must be between 0 and 1.")
     
     # Ensure group is a list
     group = [group] if isinstance(group, str) else group or list(adata.uns[key]["names"].dtype.names)
     
     # Get DataFrame with rank data
-    dIF_data = get.rank_ifs_groups_df(
+    dPUI_data = get.rank_apas_groups_df(
         adata=adata, group=group, key=key, pval_cutoff=pval_cutoff,
-        min_dif=abs_min_dif, max_dif=abs_max_dif,
-        rank_state=rank_state, first=first,
+        min_dpui=abs_min_dpui, max_dpui=abs_max_dpui,
         dpr_cutoff=dpr_cutoff,
+        tpr_cutoff=tpr_cutoff,
+        rpr_cutoff=rpr_cutoff,
         compare_abs=True)
     
     # Assign 'up' or 'down' based on 'dif' values
-    dIF_data['sig'] = ['up' if x > 0 else 'down' if x < 0 else '' for x in dIF_data['dif']]
+    dPUI_data['sig'] = ['up' if x > 0 else 'down' if x < 0 else '' for x in dPUI_data['dpui']]
     
     # Group by 'group' and 'gene_name' and aggregate 'sig' and 'names'
-    dIF_data = dIF_data.groupby(["group", "gene_name"]).agg({"sig": list, "names": list}).reset_index()
-    dIF_data=dIF_data.dropna()
+    dPUI_data = dPUI_data.groupby(["group", "gene_name"]).agg({"sig": list, "names": list}).reset_index()
+    dPUI_data=dPUI_data.dropna()
     
     # Filter out rows with only one unique value in 'sig'
-    dIF_data = dIF_data[dIF_data['sig'].apply(lambda x: len(set(x)) > 1)]
+    dPUI_data = dPUI_data[dPUI_data['sig'].apply(lambda x: len(set(x)) > 1)]
     
     # Convert data to switch format
-    switch_data = _convert_table(dIF_data)
+    switch_data = _convert_table(dPUI_data)
     
     adata.uns[key_added]['value'] = switch_data.to_records(index=False)
     
@@ -137,10 +139,10 @@ def rank_switchs_groups(
 
 
         
-def rank_switch_consequences_groups(
+def rank_apa_switch_consequences_groups(
     adata: ad.AnnData, 
     var_name_list: list,
-    key: str = "rank_switchs_groups",
+    key: str = "rank_apa_switchs_groups",
     key_added: Union[None, str] = None, 
     ):
     """
@@ -167,15 +169,15 @@ def rank_switch_consequences_groups(
     
     # Set a default key if not provided
     if key_added is None:
-        key_added = "rank_switch_consequences_groups"
+        key_added = "rank_apa_switchs_consequences_groups"
     
     # Initialize parameters in adata.uns
     adata.uns[key_added] = {}
     adata.uns[key_added]["params"] = adata.uns[key]['params']
     
     # Split variable names into numeric and string categories
-    var_name_number_list = [i for i in var_name_list if isinstance(adata.var[i][0], (np.float64, np.int32))]
-    var_name_str_list = [i for i in var_name_list if isinstance(adata.var[i][0], bool)]  
+    var_name_number_list = [i for i in var_name_list if isinstance(adata.var[i][0], (np.float64, np.int32, np.int64))]
+    var_name_str_list = [i for i in var_name_list if isinstance(adata.var[i][0], np.bool_)]  
     
     switch_data_summary_list = []
     
@@ -184,11 +186,11 @@ def rank_switch_consequences_groups(
     # Process numeric variables
     if var_name_number_list:
         for i in var_name_number_list:
-            tmp_dict = {k: v for k, v in zip(adata.var['isoform'], adata.var[i])}
+            tmp_dict = {k: v for k, v in zip(adata.var['apa'], adata.var[i])}
             _switch_data = switch_data.replace(tmp_dict)
 
             # Determine "more" or "less" based on comparisons
-            _switch_data[i] = ["more" if up > down else "less" if up < down else None for up, down in zip(_switch_data['isoformUpregulated'], _switch_data['isoformDownregulated'])]
+            _switch_data[i] = ["more" if up > down else "less" if up < down else None for up, down in zip(_switch_data['apaUpregulated'], _switch_data['apaDownregulated'])]
 
             _switch_data_summary = _switch_data.groupby('group')[i].value_counts().unstack(fill_value=0)
             _switch_data_summary=_switch_data_summary.rename(columns={"more": "nUP", "less": "nDown"})
@@ -203,11 +205,11 @@ def rank_switch_consequences_groups(
     # Process string variables
     if var_name_str_list:
         for i in var_name_str_list:
-            tmp_dict = {k: v for k, v in zip(adata.var['isoform'], adata.var[i])}
+            tmp_dict = {k: v for k, v in zip(adata.var['apa'], adata.var[i])}
             _switch_data = switch_data.replace(tmp_dict)
 
             # Assign values based on conditions
-            _switch_data[i] = [None if up == down else "more" if up == True else "less" for up, down in zip(_switch_data['isoformUpregulated'], _switch_data['isoformDownregulated'])]
+            _switch_data[i] = [None if up == down else "more" if up == True else "less" for up, down in zip(_switch_data['apaUpregulated'], _switch_data['apaDownregulated'])]
 
             _switch_data_summary = _switch_data.groupby('group')[i].value_counts().unstack(fill_value=0)
             _switch_data_summary=_switch_data_summary.rename(columns={"more": "nUP", "less": "nDown"})

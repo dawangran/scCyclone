@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-@File    :   _rank_swiths_groups.py
+@File    :   _rank_iso_swiths_groups.py
 @Time    :   2024/09/04 
 @Author  :   Dawn
 @Version :   1.0
-@Desc    :   Switch for scCyclone
+@Desc    :   ISO Switch for scCyclone
 """
 
 
@@ -57,7 +57,7 @@ def _convert_table(data):
 
 
 
-def rank_switchs_groups(
+def rank_iso_switchs_groups(
     adata: ad.AnnData,
     group: Union[None, str, list] = None,
     key: str = "rank_ifs_groups",
@@ -139,7 +139,7 @@ def rank_switchs_groups(
 
 
         
-def rank_switch_consequences_groups(
+def rank_iso_switch_consequences_groups(
     adata: ad.AnnData, 
     var_name_list: list,
     key: str = "rank_switchs_groups",

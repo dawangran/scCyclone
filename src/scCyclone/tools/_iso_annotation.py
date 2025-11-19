@@ -16,7 +16,7 @@ import anndata as ad
 _feature_dict = {
     "cpc2": ["coding_probability","label"],
     "deeploc2": ["Localizations", "Signals"],
-    "sqanti3": ["chrom", "strand", "length", "exons", "structural_category", "associated_gene", "CDS_length", "CDS_start", "CDS_end", "CDS_genomic_start", "CDS_genomic_end", "predicted_NMD"]   
+    "sqanti3": ["chrom", "strand", "length", "exons", "structural_category", "associated_gene", "CDS_length", "CDS_start", "CDS_end", "CDS_genomic_start", "CDS_genomic_end", "predicted_NMD","polyA_dist"]   
 }
 
 

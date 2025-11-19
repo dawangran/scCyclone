@@ -5,7 +5,8 @@ from __future__ import annotations
 
 
 
-from .read  import generate_Iso_adata, generate_PSI_adata, generate_Gene_adata, generate_IF_adata
+from .read  import generate_Iso_adata, generate_PSI_adata, generate_Gene_adata, generate_IF_adata, generate_APA_adata
+from . import tools as tl
 from . import get as get
 from . import plotting as pl
 
@@ -18,6 +19,7 @@ __all__ = [
     "generate_PSI_adata",
     "generate_Gene_adata",
     "generate_IF_adata",
+    "generate_APA_adata",
     "get",
     "pl",
     "tl",
