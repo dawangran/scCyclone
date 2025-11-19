@@ -10,7 +10,7 @@
 
 ## 🔬 Overview
 
-**scCyclone** is a comprehensive Python toolkit for **single-cell long-read transcriptomics** (ONT & PacBio).  
+**scCyclone** is a comprehensive Python toolkit for **single-cell long-read transcriptomics**.  
 It provides isoform-aware quantification, transcript structure annotation, differential transcript usage (DTU), splicing event analysis (DSE), and RBP motif enrichment with rMAPS-compatible output.
 
 Built on top of **Scanpy / AnnData**, scCyclone introduces a standardized multi-layer representation of:
